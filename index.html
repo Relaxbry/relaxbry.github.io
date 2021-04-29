@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Covid-19-Stock Visualization</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="https://fonts.googleapis.com/css?family=Roboto+Mono:300,400" rel="stylesheet">
+	<!-- Animate.css -->
+	<link rel="stylesheet" href="css/animate.css">
+	<!-- Icomoon Icon Fonts-->
+	<link rel="stylesheet" href="css/icomoon.css">
+	<!-- Simple Line Icons -->
+	<link rel="stylesheet" href="css/simple-line-icons.css">
+	<!-- Bootstrap  -->
+	<link rel="stylesheet" href="css/bootstrap.css">
+	<!-- Style -->
+	<link rel="stylesheet" href="css/style.css">
+	<!-- Modernizr JS -->
+	<script src="js/modernizr-2.6.2.min.js"></script>
+	<!-- link rel="stylesheet" href="assets/styles.css" -->
+	<link rel="stylesheet" href="css/style.css">
+	<script src="https://d3js.org/d3.v4.js"></script>
+	<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+</head>
+
+<body>
+	<div class="cursor"></div>
+	<script>
+		const cursor = document.querySelector('.cursor');
+		document.addEventListener('mousemove', e => {
+			cursor.setAttribute("style", "top: " + (e.pageY - 10) + "px; left: " + (e.pageX - 10) + "px;")
+		})
+		document.addEventListener('click', () => {
+			cursor.classList.add("expand");
+			setTimeout(() => {
+				cursor.classList.remove("expand");
+			}, 500)
+		})
+	</script>
+
+	<header role="banner" id="fh5co-header">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default navbar-fixed-top">
+					<div class="navbar-header">
+						<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar"><i></i></a>
+						<a class="navbar-brand" href="index.html">COVID19XSTOCKMARKET</a>
+					</div>
+					<div id="navbar" class="navbar-collapse collapse">
+						<ul class="nav navbar-nav navbar-right">
+							<!--	<li class="active"><a href="#" data-nav-section="Home"><span>Home</span></a></li> -->
+							<li><a href="#" data-nav-section="scatterplot"><span>ScatterPlot</span></a></li>
+							<li><a href="#" data-nav-section="lineplot"><span>CrossValidation</span></a></li>
+							<li><a href="#" data-nav-section="connectedscatter"><span>ConnectedScatter</span></a></li>
+						</ul>
+					</div>
+				</nav>
+			</div>
+		</div>
+	</header>
+
+	<section id="fh5co-home" data-section="home" style="background-image: url(images/covidstock.png);" data-stellar-background-ratio="0.5">
+		<div class="gradient"></div>
+		<div class="container">
+			<div class="text-wrap">
+				<div class="text-inner">
+					<div class="row">
+						<div class="col-md-8 col-md-offset-2 text-center">
+							<h1 class="animate-box fadeInUp animated-fast"><span class="big">STOCK MARKET</span> <br><span>during</span> <br><span class="medium">COVID-19 in 2021</span></h1>
+							<h2 class="animate-box">Created by <a href="https://www.linkedin.com/in/thebryanortiz/" target="_blank">Bry</a></h2>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section id="fh5co-services" data-section="scatterplot">
+		<div class="fh5co-services">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12 section-heading text-center">
+						<script type="text/javascript" src="js/d3.min.js"></script>
+						<h2 class="animate-box">COVID-19 CASES & S&P 500 CLOSING PRICE </h2>
+						<div class="dataviz" id="my_dataviz"></div>
+						<script>
+							//set dimensions and margins of graph
+							var margin = {
+									top: 10,
+									right: 30,
+									bottom: 30,
+									left: 60
+								},
+								width = 460 - margin.left - margin.right,
+								height = 400 - margin.top - margin.bottom;
+
+
+							//append svg objct to body of page
+							var svg = d3.select("#my_dataviz")
+								.append("svg")
+								.attr("width", width + margin.left + margin.right)
+								.attr("height", height + margin.top + margin.bottom)
+								.append("g")
+								.attr("transform",
+									"translate(" + margin.left + "," + margin.top + ")");
+
+							var parseTime = d3.timeParse("%m/%d/%y");
+
+							//original dataset
+							//"covid dataset.csv"
+
+							//updated with new dataset containing total covid cases in a day and the closing performance of the s&p500
+
+							d3.csv("data/CovidCasesXStockMarket.csv", function(data) {
+								return {
+									//"Country name": data["Country name"],
+									//  Population: +data.Population,
+									//  "New cases": +data["New cases"],
+									//"Total cases": +data["Total cases"],
+									//  "Total deaths": +data["Total deaths"],
+									//  "Case fatality rate": +data["Case fatality rate"],
+									Day: parseTime(data.Day),
+									"TC": +data.TC,
+									"s&p500": +data["s&p500"]
+								};
+							}).then(data => {
+
+
+								var x = d3.scaleLinear()
+									.domain([
+										d3.min(data, function(d) {
+											return d["s&p500"];
+										}),
+										d3.max(data, function(d) {
+											return d["s&p500"];
+										})
+									])
+									.range([0, width]);
+
+
+								svg.append("g")
+									.attr("class", "myXaxis")
+									.attr("transform", "translate(0," + height + ")")
+									.call(d3.axisBottom(x))
+									.attr("opacity", "0")
+
+
+
+
+
+
+
+								// Add Y axis
+								//y axis is in the millions
+								var y = d3.scaleLinear()
+									.domain([
+										d3.min(data, function(d) {
+											return d["TC"] / 1000000;
+										}),
+										d3.max(data, function(d) {
+											return d["TC"] / 1000000;
+										})
+									])
+									.range([height, 0]);
+
+
+								svg.append("g")
+									.call(d3.axisLeft(y));
+
+
+								//tooltip
+								var tooltip = d3.select("#my_dataviz")
+									.append("div")
+									.style("opacity", 0)
+									.attr("class", "tooltip")
+									.style("background-color", "white")
+									.style("border", "solid")
+									.style("border-width", "1px")
+									.style("border-radius", "5px")
+									.style("padding", "10px")
+
+								var mouseover = function(d) {
+									tooltip
+										.style("opacity", 1)
+								}
+
+								var mousemove = function(d) {
+									tooltip
+										.html("The exact value of<br>the s&p500 is: " + d["TC"])
+										.style("left", (d3.mouse(this)[0] + 90) + "px")
+										.style("top", (d3.mouse(this)[1]) + "px")
+								}
+
+
+								var mouseleave = function(d) {
+									tooltip
+										.transition()
+										.duration(200)
+										.style("opacity", 0)
+								}
+
+
+
+								var color = d3.scaleOrdinal()
+									.domain(["setosa", "versioncolor", "virginica"])
+									.range(["#440154ff", "#21908dff", "#fde725ff"])
+
+								var highlight = function(d) {
+									selected_specie = d.Species
+
+									d3.selectAll(".dot")
+										.transition()
+										.duration(200)
+										.style("fill", "yellow")
+										.attr("r", 3)
+
+									d3.selectAll("." + selected_specie)
+										.transition()
+										.duration(200)
+										.style("fill", color(selected_specie))
+										.attr("r", 7)
+
+
+								}
+
+								var doNotHighlight = function() {
+									d3.selectAll(".dot")
+										.transition()
+										.duration(200)
+										.style("fill", "black")
+										.attr("r", 5)
+								}
+
+								//adds dots
+								svg.append('g')
+									.selectAll("dot")
+									.data(data)
+									.enter()
+									.append("circle")
+									.attr("class", function(d) {
+										return "dot " + d.Species
+									})
+									.attr("cx", function(d) {
+										//console.log(x(d["s&p500"]));
+										return x(d["s&p500"]);
+									})
+									.attr("cy", function(d) {
+
+										return y(d["TC"] / 1000000);
+									})
+									.attr("r", 2.5)
+									.style("fill", function(d) {
+										return color(d.Species)
+									})
+									.on("mouseover", highlight)
+									.on("mouseleave", doNotHighlight)
+
+
+
+								x.domain([3600, 4000])
+
+								svg.select(".myXaxis")
+									.transition()
+									.duration(2000)
+									.attr("opacity", "1")
+									.call(d3.axisBottom(x));
+
+								svg.selectAll("circle")
+									.transition()
+									.delay(function(d, i) {
+										return (i * 3)
+									})
+									.duration(2000)
+									.attr("cx", function(d) {
+
+										return x(d["s&p500"]);
+									})
+									.attr("cy", function(d) {
+
+										return y(d["TC"] / 1000000);
+									})
+
+
+								svg.selectAll("text")
+									.data(data)
+									.enter()
+									.append("text")
+									.text(function(d) {
+										return d["TC"] + "," + d["s&p500"];
+									})
+									.attr("x", function(d) {
+										return d["s&p500"];
+									})
+									.attr("y", function(d) {
+										return d["TC"] / 1000000;
+									})
+									.attr("font-family", "sans-serif")
+									.attr("font-size", "11px")
+									.attr("fill", "red");
+
+							});
+						</script>
+						<p>The scatter plot displays the total number of COVID-19 cases in the U.S. per millions on the y-axis and the S&P 500 closing price on the x-axis. The S&P 500 index was used to measure the U.S. stock market performance since it measures
+							the stock performance of 500 large companies listed on various stock exchanges in the United States. The stock market index provides us with a general sense of how the entire market is performing. It is apparent there is a higher
+							closing price for the S&P 500 when there are more cases. Intuitively, this is a confusing result as we would assume greater COVID-19 cases would lead to state closures/lockdowns which would lower overall consumption from the lack of
+							disposable income. This would in turn lead to a lower S&P 500 closing price. However, the scatter plot says otherwise. One possible explanation for the positive correlation between COVID-19 cases and U.S. stock market performance is the
+							inclusion of stimulus checks and their effect on the overall economy. Data used to generate the scatter plot was from the dates 01/04/21 to 03/08/21 giving us a short-run view of the relationship between stock performance and cases.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		</div>
+	</section>
+
+	<section id="fh5co-explore" data-section="lineplot">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="animate-box">Cross Validation Chart</h2>
+					<img src="images/Rplot.png" alt="linear regression model">
+					<h3>Cross-validation chart using S&P 500 closing price as dependent variable and COVID-19 cases as the independent variable. X-axis is total COVID-19 cases in the millions while the Y-axis is S&P 500 closing price.</h3>
+				</div>
+			</div>
+		</div>
+		</div>
+		</div>
+		<div class="fh5co-project">
+			<div class="container">
+				<div class="row">
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section id="fh5co-explore" data-section="lineplot">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="animate-box">Background on Cross-validation chart</h2>
+					<h3>The above cross-validation chart may be confusing to individuals who have never heard of the cross-validation method. To provide some clarification, we need to understand how the chart came to be. Initially, the visualization in the
+						middle was going to be a regression model. I created a regression model using R where I regressed the S&P 500 closing price on Total COVID-19 cases. This was the regression: S&P500 = 3.446e+03 + 1.314e-05 x Total COVID-19 cases. Before we dive any further, I also calculated the correlation between S&P 500 and total
+						COVID-19 cases and found a positive correlation of 0.5978508. In an attempt to understand the relationship even further, I obtained summary statistics on the linear regression model. I found the p-values for the coefficients to be
+						statistically significant at the 0-0.001 level. The p-value for the intercept and total COVID-19 cases were 2e-16 and 1.82e-05 respectively. In other words, the linear regression model is statistically significant. Some additional notable
+						findings were as follows: Residual standard error: 50.88 on 42 degrees of freedom; Adjusted R-squared: 0.3421; F-statistic: 23.36; Now, onto the fun. When I created the linear regression model I used the entire dataset. This prevented me
+						from visualizing how the model would react to new data. Thus, I split the dataset in an 80:20 sample. Created the model using only 80% sample to predict the dependent variable on test data. This allowed me to have model predicted values
+						for the 20% data in addition to the actual values from the original dataset. Finally, to ensure that the created model performs well when it is built on different training data and predicted on the remaining data, I split the data into
+						'k' mutually exclusive random sample portions. In this instance, k=5 as there are 5 folds. I set each portion as test data and built the model on the remaining data while calculating the mean squared error of the predictions. I then computed the average of these mean squared errors
+						to compare the different linear models. In summation, what the cross-validation chart displays is differnt model predictions which allows for the comparison of model's prediction accuracy and the comparison of the lines of best fit. </h3>
+				</div>
+			</div>
+		</div>
+		</div>
+		</div>
+		<div class="fh5co-project">
+			<div class="container">
+				<div class="row">
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section id="fh5co-pricing" data-section="connectedscatter" style="background-image: url();">
+		<section class="pricing-section bg-3">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12 section-heading text-center">
+						<h2 class="animate-box"><span> S&P 500 CLOSING PRICE & COVID-19 CASES </span></h2>
+						<div id="connectedscatterviz"></div>
+						<style>
+							.myCircle:hover {
+								stroke: black;
+							}
+						</style>
+						<script>
+							//set dimensions and margins of graph
+							var margin4 = {
+									top: 10,
+									right: 30,
+									bottom: 30,
+									left: 60
+								},
+								width4 = 460 - margin4.left - margin4.right,
+								height4 = 400 - margin4.top - margin4.bottom;
+
+
+							//append svg objct to body of page
+							var svg4 = d3.select("#connectedscatterviz")
+								.append("svg")
+								.attr("width", width4 + margin4.left + margin4.right)
+								.attr("height", height4 + margin4.top + margin4.bottom)
+								.append("g")
+								.attr("transform",
+									"translate(" + margin4.left + "," + margin4.top + ")");
+
+							var parseTime = d3.timeParse("%m/%d/%y");
+
+							//original dataset
+							//"covid dataset.csv"
+
+							//updated with new dataset containing total covid cases in a day and the closing performance of the s&p500
+
+							d3.csv("data/CovidCasesXStockMarket.csv", function(data) {
+								return {
+									//"Country name": data["Country name"],
+									//  Population: +data.Population,
+									//  "New cases": +data["New cases"],
+									//"Total cases": +data["Total cases"],
+									//  "Total deaths": +data["Total deaths"],
+									//  "Case fatality rate": +data["Case fatality rate"],
+									Day: parseTime(data.Day),
+									"TC": +data.TC,
+									"s&p500": +data["s&p500"]
+								};
+							}).then(data => {
+
+								var x = d3.scaleLinear()
+									.domain([
+										d3.min(data, function(d) {
+											//return d["s&p500"];
+											return d["TC"] / 1000000;
+										}),
+										d3.max(data, function(d) {
+											//return d["s&p500"];
+											return d["TC"] / 1000000;
+										})
+									])
+									.range([0, width4]);
+
+
+								svg4.append("g")
+									.attr("transform", "translate(0," + height4 + ")")
+									.call(d3.axisBottom(x))
+
+								// Add Y axis
+								//y axis is in the millions
+								var y = d3.scaleLinear()
+									.domain([
+										d3.min(data, function(d) {
+
+											return d["s&p500"];
+										}),
+										d3.max(data, function(d) {
+
+											return d["s&p500"];
+										})
+									])
+									.range([height4, 0]);
+
+
+								svg4.append("g")
+									.call(d3.axisLeft(y));
+
+
+								svg4.append("path")
+									.datum(data)
+									.attr("fill", "none")
+									.attr("stroke", "black")
+									.attr("stroke-width", 1.5)
+									.attr("d", d3.line()
+										.curve(d3.curveBasis)
+										.x(function(d) {
+
+											return x(d["TC"] / 1000000)
+										})
+										.y(function(d) {
+
+											return y(d["s&p500"])
+										})
+									)
+
+								//tooltip
+								var Tooltip4 = d3.select("#connectedscatterviz")
+									.append("div")
+									.style("opacity", 0)
+									.attr("class", "tooltip")
+									.style("background-color", "white")
+									.style("border", "solid")
+									.style("border-width", "2px")
+									.style("border-radius", "5px")
+									.style("padding", "5px")
+
+								var mouseover = function(d) {
+									Tooltip4
+										.style("opacity", 1)
+								}
+
+								var mousemove = function(d) {
+									Tooltip4
+										.html("The exact value: " + d["s&p500"]) //d["TC"])
+										.style("left", (d3.mouse(this)[0] + 70) + "px")
+										.style("top", (d3.mouse(this)[1]) + "px")
+								}
+
+								var mouseleave = function(d) {
+									Tooltip4
+										.style("opacity", 0)
+								}
+
+								//adds dots
+								svg4.append('g')
+									.selectAll("dot")
+									.data(data)
+									.enter()
+									.append("circle")
+									.attr("class", "myCircle")
+									.attr("cx", function(d) {
+										return x(d["TC"] / 1000000);
+
+									})
+									.attr("cy", function(d) {
+										return y(d["s&p500"]);
+									})
+									.attr("r", 8)
+									.attr("stroke", "#69b3a2")
+									.attr("stroke-width", 3)
+									.attr("fill", "white")
+									.on("mouseover", mouseover)
+									.on("mouseover", mousemove)
+									.on("mouseleave", mouseleave)
+							});
+						</script>
+						<div class="row">
+							<div class="col-md-8 col-md-offset-2 subtext animate-box">
+								<p>The connected scatter plot resembles the original scatter plot. However, I have transposed the x and y axis as this visualization displayed the data more appropriately. Now the total cases per day are on the x-axis and the S&P 500
+									closing price is on the y-axis. Given the increasing nature of COVID-19 cases, the x-axis can be interpreted as a linear progression of the month since the data used also showed COVID-19 cases increasing per day. The visualization
+									emphasizes certain characteristics of the data. First, greater COVID-19 cases are positively correlated with greater S&P 500 index closing prices. Interestingly, the highest S&P 500 closing price did not occur when COVID-19 cases
+									were at an all time high. According to the data used, S&P 500 index had the highest closing price when COVID-19 cases were around 31 - 32 million. After 32 million COVID-19 cases, it appears the S&P 500 closing price begins to trend
+									downward. There are too many factors that could affect the S&P500 index closing price. There also appears to be a fluctuation in the closing price throughout the month. This can be attributed to many factors including but not
+									limited to the cyclical expansions and contractions of the economy. Perhaps the effect of COVID-19 cases on stock market performance is too insignificant to disrupt the continuous growth of the bull market. Robinhood and Webull may
+									also explain the unwavering growth in the stock market. </p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+				</div>
+			</div>
+			<div id="fh5co-counter-section" class="fh5co-counters">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-12 section-heading text-center">
+							<h2 class="animate-box"><span>IMPORTANT STATISTICS</span></h2>
+						</div>
+					</div>
+					<div class="row animate-box">
+						<div class="col-md-3 text-center">
+							<span class="fh5co-counter js-counter" data-from="0" data-to="33485219" data-speed="9000" data-refresh-interval="50"></span>
+							<span class="fh5co-counter-label">Current U.S. Covid-19 cases as of 3/08/21</span>
+						</div>
+						<div class="col-md-3 text-center">
+							<span class="fh5co-counter js-counter" data-from="0" data-to="525031" data-speed="9000" data-refresh-interval="50"></span>
+							<span class="fh5co-counter-label">Current deaths due to Covid-19 as of 3/08/21</span>
+						</div>
+						<div class="col-md-3 text-center">
+							<span class="fh5co-counter js-counter" data-from="0" data-to="3821.35" data-speed="9000" data-refresh-interval="50"></span>
+							<span class="fh5co-counter-label">S&P 500 closing price as of 3/08/21</span>
+						</div>
+						<div class="col-md-3 text-center">
+							<span class="fh5co-counter js-counter" data-from="0" data-to="1007844" data-speed="9000" data-refresh-interval="50"></span>
+							<span class="fh5co-counter-label">Fully vaccinated individuals as of 3/08/21</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+	</section>
+
+	<div id="fh5co-footer" role="contentinfo">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-4 animate-box">
+					<h3 class="section-title">COVID19XSTOCKMARKET</h3>
+					<p>COVID19XSTOCKMARKET is a project intended to reveal a correlation between COVID-19 cases and the U.S. stock market performance found in the first 3 months of 2021. </p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+				<div id="fh5co-footer" role="contentinfo">
+					<div class="container">
+						<div class="row">
+							<div class="col-md-4 animate-box">
+								<h3 class="section-title">Data</h3>
+								<p>Data retrieved from: https://www.marketwatch.com/investing/index/spx/download-data and
+									https://ourworldindata.org
+									Created a new modified dataset titled CovidCasesXStockMarket.csv containing the total COVID-19 cases per day, the day, and the closing price of the S&P500.</p>
+								<p> The cross-validation chart was created using the programming language R. The data used in the creation of the cross-validation model is the same used for the two scatter plots. covidxstock.R is the file name containing the
+									regression model, cross-validation model, and chart.</p>
+								<p> Please note the IMPORTANT STATISTICS counter is only up to March 8th as this is the last day in the dataset used to create the visualizations. </p>
+							</div>
+							</div>
+						</div>
+
+
+
+						<div class ="container">
+							<div class="col-md-4 animate-box">
+								<h3 class="section-title">Connect with Bry</h3>
+								<ul class="social-media">
+									<li><a href="https://www.facebook.com/ortizmartinezbryan" class="facebook"><i class="icon-facebook"></i></a></li>
+									<li><a href="https://github.com/Relaxbry" class="github"><i class="icon-github-alt"></i></a></li>
+								</ul>
+							</div>
+							</form>
+					</div>
+
+					<!-- jQuery -->
+					<script src="js/jquery.min.js"></script>
+					<!-- jQuery Easing -->
+					<script src="js/jquery.easing.1.3.js"></script>
+					<!-- Bootstrap -->
+					<script src="js/bootstrap.min.js"></script>
+					<!-- Waypoints -->
+					<script src="js/jquery.waypoints.min.js"></script>
+					<!-- Stellar Parallax -->
+					<script src="js/jquery.stellar.min.js"></script>
+					<!-- Counters -->
+					<script src="js/jquery.countTo.js"></script>
+					<!-- Main JS (Do not remove) -->
+					<script src="js/main.js"></script>
+</body>
+
+</html>
